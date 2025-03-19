@@ -1,29 +1,33 @@
 import streamlit as st
+import pandas as pd
 import numpy as np
 import joblib
 
-# Charger le modèle
-model = joblib.load("model_final.joblib")  # Assure-toi que ce fichier existe et est bien sans normalisation
+# Charger les modèles
+regression_model = joblib.load("model.joblib")
+classification_model = joblib.load("classification_model.joblib")
+
+# Charger les 5 variables les plus importantes
+feature_names = ["grade", "sqft_living", "lat", "long", "sqft_living15"]  
 
 # Interface utilisateur
-st.title("🏡 Prédiction du Prix des Maisons")
-st.write("Entrez les caractéristiques de la maison pour estimer son prix.")
+st.title("Prédiction de la Valeur des Maisons")
 
-# Variables sélectionnées (doivent correspondre aux variables utilisées pour l'entraînement)
-features = ['sqft_living', 'grade', 'sqft_above', 'bathrooms', 'view', 'sqft_living15','sqft_basement']
+option = st.radio("Choisissez un mode :", ("Régression", "Classification"))
 
-# Création des champs d'entrée utilisateur
-data = {}
-for feature in features:
-    data[feature] = st.number_input(f"{feature}", value=0.0)
+# Saisie utilisateur
+data_input = {}
+for feature in feature_names:
+    data_input[feature] = st.number_input(f"{feature}", value=0.0)
 
-# Bouton de prédiction
-if st.button("Prédire le prix"):
-    # Transformation des données d'entrée (sans normalisation)
-    input_data = np.array([[data[feature] for feature in features]])
-    
-    # Prédiction
-    prediction = model.predict(input_data)
+# Transformation des entrées en dataframe
+input_data = pd.DataFrame([data_input])
 
-    # Affichage du résultat
-    st.success(f"💰 Le prix estimé de la maison est : {prediction[0]:,.2f} $")
+if st.button("Prédire"):
+    if option == "Régression":
+        prediction = regression_model.predict(input_data)
+        st.success(f"Prix estimé : {prediction[0]:,.2f} USD")
+    else:
+        classification = classification_model.predict(input_data)
+        result = "Élevé" if classification[0] == 1 else "Bas"
+        st.success(f"Catégorie de prix : {result}")
